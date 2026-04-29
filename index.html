@@ -15,12 +15,18 @@
         document.body.appendChild(script)
     }
     function preencherEndereco(conteudo){
-        //vereficar se nao veio errado na consulta
+        if(!("erro" in conteudo)){
         document.getElementById("rua").value = conteudo.logradouro
-        //bairro
         document.getElementById("cidade").value = conteudo.localidade
-        //uf
+        document.getElementById("bairro").value = conteudo.bairro
+        document.getElementById("estado").value = conteudo.uf
+    
+        
+        }else{
+        resposta.textContent = "O CEP digitado não existe!!"
+        }
     }
+
 </script>
 </head>
 <body>
@@ -44,3 +50,4 @@
 </body>
 </html>
         
+
