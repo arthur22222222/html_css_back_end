@@ -79,6 +79,20 @@
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
   }
 
+  input.invalid {
+    border-color: #d81b60;
+    box-shadow: 0 0 0 4px rgba(216, 27, 96, 0.12);
+  }
+
+  .error-message {
+    display: block;
+    color: #d81b60;
+    font-size: 0.9rem;
+    margin-top: -16px;
+    margin-bottom: 18px;
+    min-height: 18px;
+  }
+
   .submit-btn {
     width: 100%;
     padding: 16px;
