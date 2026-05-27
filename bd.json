@@ -11,4 +11,47 @@
 "cidade":"ponta grossa",
 "estado":"parana",
 "data_nasc":"22/10/2009"
-}]
+},
+{
+    "nome": "Beatriz Silva",
+    "cpf": 45872136905,
+    "gmail": "beatriz.silva2025@gmail.com",
+    "telefone": "(41)98765-4321",
+    "senha": "bia1234",
+    "cep": "80230-000",
+    "rua": "Avenida das Flores",
+    "numero casa": 1245,
+    "bairro": "Jardim Botânico",
+    "cidade": "curitiba",
+    "estado": "parana",
+    "data_nasc": "15/03/2008"
+  },
+  {
+    "nome": "Lucas Mendes",
+    "cpf": 78945612300,
+    "gmail": "lucas.mendes.pro@gmail.com",
+    "telefone": "(42)98877-1122",
+    "senha": "lucas2026",
+    "cep": "84010-210",
+    "rua": "Rua Marechal Deodoro",
+    "numero casa": 389,
+    "bairro": "Centro",
+    "cidade": "ponta grossa",
+    "estado": "parana",
+    "data_nasc": "08/07/2010"
+  },
+  {
+    "nome": "Isabela Santos",
+    "cpf": 32165498712,
+    "gmail": "isabela.santos08@gmail.com",
+    "telefone": "(44)99912-3344",
+    "senha": "isaBella22",
+    "cep": "87020-030",
+    "rua": "Rua Pernambuco",
+    "numero casa": 672,
+    "bairro": "Zona 7",
+    "cidade": "maringa",
+    "estado": "parana",
+    "data_nasc": "29/11/2007"
+  }
+]
