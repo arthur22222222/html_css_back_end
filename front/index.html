@@ -45,6 +45,36 @@ function preencherEndereco(conteudo){
         alert("CEP não encontrado!");
     }
 }
+function pegar_dados(){
+    const dados = {
+        nome: document.getElementById("nome").value,
+        cpf: document.getElementById("cpf").value,
+        email: document.getElementById("email").value,
+        celular: document.getElementById("celular").value,
+        senha: document.getElementById("senha").value,
+        cep: document.getElementById("cep").value,
+        rua: document.getElementById("rua").value,
+        numero_casa: document.getElementById("numero_casa").value,
+        bairro: document.getElementById("bairro").value,
+        cidade: document.getElementById("cidade").value,
+        estado: document.getElementById("estado").value,
+        dt_nasc: document.getElementById("dt_nasc").value,
+    }
+    return JSON.stringify(dados)
+}
+async function enviar_cadastro(){
+    const dados = pegar_dados()
+    try{
+        const resposta = await fetch("http://10.216.241.174:3000/cliente",{
+            method: "POST",
+            headers: { "content-type": "application/json"},
+            body: dados
+        })
+        if (!resposta.ok) {alert("Erro ao cadastrar!")}
+        alert("cliente cadastrado com sucesso!")
+        }catch(error) { alert("Erro ao cadastrar!" + error.message)}
+    }
+
 </script>
 </head>
 <body>
@@ -78,7 +108,7 @@ function preencherEndereco(conteudo){
         <input type="text" id="dt_nasc" required>
 
 
-        <input type="submit" value="Enviar Cadastro">
+        <input type="button" value="Enviar Cadastro" onclick="enviar_cadastro()">
         </form>
     </main>
 </body>

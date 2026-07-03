@@ -5,10 +5,12 @@
 
 const express = require('express');
 const fs = require('fs');
+const cors = require("cors");
+
 
 const app = express();
 const port = 3000;
-
+app.use(cors());
 app.use(express.json());
 
 app.get('/ola', (req, res) => {
@@ -124,6 +126,7 @@ app.put("/clientes/:cpf", (req,res)=>{
         res.status(500).json({resposta: error.message})
     }
   })
+
 
 app.listen(port, () => {
   console.log(`🚀 API rodando em http://localhost:${port}`);
