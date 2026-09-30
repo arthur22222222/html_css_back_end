@@ -16,7 +16,9 @@ const db = require("./db")
             UNIQUE KEY email (email)
           ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
         `)
+        console.log("Estrutura de dados e tabela 'clientes' criada com sucesso!!")
     }catch(error){
         console.log(error)
     }
  }
+ criar_estrutura()
