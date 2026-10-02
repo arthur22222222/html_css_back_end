@@ -3,7 +3,7 @@ const db = require("./db")
  async function criar_estrutura(){
     try{
         await db.pool.query(`
-        DROP TABLE IF EXISTS Clientes
+        DROP TABLE IF EXISTS Clientes;
         CREATE TABLE Clientes (
             id int NOT NULL AUTO_INCREMENT,
             senha varchar(512) NOT NULL,

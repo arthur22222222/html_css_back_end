@@ -65,7 +65,7 @@ function pegar_dados(){
 async function enviar_cadastro(){
     const dados = pegar_dados()
     try{
-        const resposta = await fetch("http://10.216.241.174:3000/cliente",{
+        const resposta = await fetch("http://localhost:3001/cliente",{
             method: "POST",
             headers: { "content-type": "application/json"},
             body: dados
