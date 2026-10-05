@@ -1,0 +1,16 @@
+[
+  {
+    "nome": "arthur",
+    "cpf": "113.011.609-38",
+    "gmail": "tui1020kg1@gmail.com",
+    "telefone": "43999664654",
+    "senha": "22102009",
+    "cep": "84071-452",
+    "rua": "Rua João Hermann de Geus",
+    "numero casa": "776",
+    "bairro": "Boa Vista",
+    "cidade": "Ponta Grossa",
+    "estado": "PR",
+    "data_nasc": "2009-10-22"
+  }
+]
