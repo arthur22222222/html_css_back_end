@@ -12,5 +12,19 @@
     "cidade": "Ponta Grossa",
     "estado": "PR",
     "data_nasc": "2009-10-22"
+  },
+  {
+    "nome": "gabriel",
+    "cpf": "22222222201",
+    "gmail": "gabriel@gmail.com",
+    "telefone": "43999999999",
+    "senha": "22102009",
+    "cep": "80010-000",
+    "rua": "Rua José Loureiro",
+    "numero casa": "777",
+    "bairro": "Centro",
+    "cidade": "Curitiba",
+    "estado": "PR",
+    "data_nasc": "2009-08-08"
   }
 ]
