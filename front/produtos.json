@@ -4,34 +4,447 @@
     "nome": "Camiseta Básica",
     "preco": 49.9,
     "descricao": "Camiseta 100% algodão, várias cores.",
-    "emoji": "👕"
+    "emoji": "👕",
+    "categoria": "vestuario"
   },
   {
     "id": 2,
     "nome": "Tênis Casual",
     "preco": 189.9,
     "descricao": "Tênis confortável para o dia a dia.",
-    "emoji": "👟"
+    "emoji": "👟",
+    "categoria": "calcado"
   },
   {
     "id": 3,
     "nome": "Mochila Urbana",
     "preco": 129.5,
     "descricao": "Mochila resistente com compartimento para notebook.",
-    "emoji": "🎒"
+    "emoji": "🎒",
+    "categoria": "acessorio"
   },
   {
     "id": 4,
     "nome": "Fone Bluetooth",
     "preco": 99.0,
     "descricao": "Fone sem fio com cancelamento de ruído.",
-    "emoji": "🎧"
+    "emoji": "🎧",
+    "categoria": "audio"
   },
   {
     "id": 5,
     "nome": "Garrafa Térmica",
     "preco": 59.9,
     "descricao": "Mantém a temperatura por até 12 horas.",
-    "emoji": "🧴"
+    "emoji": "🧴",
+    "categoria": "utilidade"
+  },
+  {
+    "id": 6,
+    "nome": "Processador Intel Core i5-12400F",
+    "preco": 899.9,
+    "descricao": "6 núcleos e 12 threads para jogos e produtividade.",
+    "emoji": "🧠",
+    "categoria": "processador"
+  },
+  {
+    "id": 7,
+    "nome": "Processador AMD Ryzen 5 5600",
+    "preco": 749.9,
+    "descricao": "6 núcleos e 12 threads com ótimo custo-benefício.",
+    "emoji": "🧠",
+    "categoria": "processador"
+  },
+  {
+    "id": 8,
+    "nome": "Processador Intel Core i3-12100F",
+    "preco": 549.9,
+    "descricao": "4 núcleos e 8 threads para PCs de entrada.",
+    "emoji": "🧠",
+    "categoria": "processador"
+  },
+  {
+    "id": 9,
+    "nome": "Placa-mãe B550M",
+    "preco": 599.9,
+    "descricao": "Chipset B550 com suporte a Ryzen e PCIe 4.0.",
+    "emoji": "🧩",
+    "categoria": "placa-mae"
+  },
+  {
+    "id": 10,
+    "nome": "Placa-mãe H610M",
+    "preco": 449.9,
+    "descricao": "Placa compacta para processadores Intel de 12ª geração.",
+    "emoji": "🧩",
+    "categoria": "placa-mae"
+  },
+  {
+    "id": 11,
+    "nome": "Memória RAM 8GB DDR4",
+    "preco": 159.9,
+    "descricao": "Módulo de 8GB a 3200MHz para upgrades.",
+    "emoji": "🧱",
+    "categoria": "memoria"
+  },
+  {
+    "id": 12,
+    "nome": "Memória RAM 16GB DDR4",
+    "preco": 299.9,
+    "descricao": "Kit de 16GB a 3200MHz para multitarefa.",
+    "emoji": "🧱",
+    "categoria": "memoria"
+  },
+  {
+    "id": 13,
+    "nome": "SSD NVMe 500GB",
+    "preco": 249.9,
+    "descricao": "Armazenamento rápido com leitura de até 3500MB/s.",
+    "emoji": "💾",
+    "categoria": "armazenamento"
+  },
+  {
+    "id": 14,
+    "nome": "SSD SATA 1TB",
+    "preco": 399.9,
+    "descricao": "Ótima opção para armazenar jogos e arquivos.",
+    "emoji": "💾",
+    "categoria": "armazenamento"
+  },
+  {
+    "id": 15,
+    "nome": "HD 2TB",
+    "preco": 349.9,
+    "descricao": "Espaço extra para backups e mídia.",
+    "emoji": "💽",
+    "categoria": "armazenamento"
+  },
+  {
+    "id": 16,
+    "nome": "Placa de Vídeo RTX 3060",
+    "preco": 1899.9,
+    "descricao": "12GB GDDR6 para jogos em alta qualidade.",
+    "emoji": "🎮",
+    "categoria": "placa-de-video"
+  },
+  {
+    "id": 17,
+    "nome": "Placa de Vídeo RX 6600",
+    "preco": 1299.9,
+    "descricao": "8GB GDDR6 com excelente desempenho em 1080p.",
+    "emoji": "🎮",
+    "categoria": "placa-de-video"
+  },
+  {
+    "id": 18,
+    "nome": "Fonte 500W 80 Plus",
+    "preco": 279.9,
+    "descricao": "Fonte confiável para configurações de entrada.",
+    "emoji": "🔌",
+    "categoria": "fonte"
+  },
+  {
+    "id": 19,
+    "nome": "Fonte 650W Modular",
+    "preco": 429.9,
+    "descricao": "Cabeamento modular e certificação 80 Plus Bronze.",
+    "emoji": "🔌",
+    "categoria": "fonte"
+  },
+  {
+    "id": 20,
+    "nome": "Gabinete Mid Tower",
+    "preco": 329.9,
+    "descricao": "Gabinete com lateral de vidro e bom fluxo de ar.",
+    "emoji": "🗄️",
+    "categoria": "gabinete"
+  },
+  {
+    "id": 21,
+    "nome": "Teclado Mecânico",
+    "preco": 279.9,
+    "descricao": "Teclado com switches azuis e iluminação RGB.",
+    "emoji": "⌨️",
+    "categoria": "periferico"
+  },
+  {
+    "id": 22,
+    "nome": "Mouse Gamer",
+    "preco": 149.9,
+    "descricao": "Sensor de 7200 DPI e botões programáveis.",
+    "emoji": "🖱️",
+    "categoria": "periferico"
+  },
+  {
+    "id": 23,
+    "nome": "Headset Gamer",
+    "preco": 199.9,
+    "descricao": "Áudio imersivo com microfone ajustável.",
+    "emoji": "🎧",
+    "categoria": "periferico"
+  },
+  {
+    "id": 24,
+    "nome": "Monitor 24\" 144Hz",
+    "preco": 999.9,
+    "descricao": "Monitor Full HD com taxa de atualização de 144Hz.",
+    "emoji": "🖥️",
+    "categoria": "monitor"
+  },
+  {
+    "id": 25,
+    "nome": "EA Sports FC 25",
+    "preco": 299.9,
+    "descricao": "Futebol realista com times, ligas e modos atualizados.",
+    "emoji": "⚽",
+    "categoria": "jogo"
+  },
+  {
+    "id": 26,
+    "nome": "Grand Theft Auto V",
+    "preco": 99.9,
+    "descricao": "Ação e mundo aberto em Los Santos.",
+    "emoji": "🚗",
+    "categoria": "jogo"
+  },
+  {
+    "id": 27,
+    "nome": "Red Dead Redemption 2",
+    "preco": 249.9,
+    "descricao": "Faroeste épico com mundo aberto e história marcante.",
+    "emoji": "🤠",
+    "categoria": "jogo"
+  },
+  {
+    "id": 28,
+    "nome": "Minecraft",
+    "preco": 149.9,
+    "descricao": "Construção e sobrevivência em um mundo de blocos.",
+    "emoji": "⛏️",
+    "categoria": "jogo"
+  },
+  {
+    "id": 29,
+    "nome": "Elden Ring",
+    "preco": 299.9,
+    "descricao": "RPG de ação desafiador em um mundo aberto.",
+    "emoji": "⚔️",
+    "categoria": "jogo"
+  },
+  {
+    "id": 30,
+    "nome": "Cyberpunk 2077",
+    "preco": 199.9,
+    "descricao": "RPG futurista em Night City, com combate e exploração.",
+    "emoji": "🌆",
+    "categoria": "jogo"
+  },
+  {
+    "id": 31,
+    "nome": "The Witcher 3: Wild Hunt",
+    "preco": 129.9,
+    "descricao": "RPG de fantasia com história premiada e expansões.",
+    "emoji": "🐺",
+    "categoria": "jogo"
+  },
+  {
+    "id": 32,
+    "nome": "Hogwarts Legacy",
+    "preco": 249.9,
+    "descricao": "Aventura no mundo mágico de Hogwarts.",
+    "emoji": "🪄",
+    "categoria": "jogo"
+  },
+  {
+    "id": 33,
+    "nome": "God of War Ragnarök",
+    "preco": 349.9,
+    "descricao": "Kratos e Atreus enfrentam deuses nórdicos.",
+    "emoji": "🪓",
+    "categoria": "jogo"
+  },
+  {
+    "id": 34,
+    "nome": "Marvel's Spider-Man 2",
+    "preco": 349.9,
+    "descricao": "Aventura de super-herói em Nova York.",
+    "emoji": "🕷️",
+    "categoria": "jogo"
+  },
+  {
+    "id": 35,
+    "nome": "The Last of Us Part II",
+    "preco": 199.9,
+    "descricao": "Drama pós-apocalíptico com combate intenso.",
+    "emoji": "🍄",
+    "categoria": "jogo"
+  },
+  {
+    "id": 36,
+    "nome": "Resident Evil 4 Remake",
+    "preco": 249.9,
+    "descricao": "Survival horror com Leon S. Kennedy.",
+    "emoji": "🧟",
+    "categoria": "jogo"
+  },
+  {
+    "id": 37,
+    "nome": "Mortal Kombat 1",
+    "preco": 279.9,
+    "descricao": "Luta com fatalities, novos personagens e modos.",
+    "emoji": "🥊",
+    "categoria": "jogo"
+  },
+  {
+    "id": 38,
+    "nome": "Street Fighter 6",
+    "preco": 249.9,
+    "descricao": "Luta clássica com controles modernos e multiplayer.",
+    "emoji": "👊",
+    "categoria": "jogo"
+  },
+  {
+    "id": 39,
+    "nome": "Tekken 8",
+    "preco": 299.9,
+    "descricao": "Luta 3D com elenco novo e gráficos realistas.",
+    "emoji": "🥋",
+    "categoria": "jogo"
+  },
+  {
+    "id": 40,
+    "nome": "Forza Horizon 5",
+    "preco": 249.9,
+    "descricao": "Corrida em mundo aberto no México.",
+    "emoji": "🏎️",
+    "categoria": "jogo"
+  },
+  {
+    "id": 41,
+    "nome": "Gran Turismo 7",
+    "preco": 299.9,
+    "descricao": "Simulador de corrida com carros licenciados.",
+    "emoji": "🏁",
+    "categoria": "jogo"
+  },
+  {
+    "id": 42,
+    "nome": "Call of Duty: Modern Warfare III",
+    "preco": 349.9,
+    "descricao": "FPS com campanha, multiplayer e modos cooperativos.",
+    "emoji": "🎯",
+    "categoria": "jogo"
+  },
+  {
+    "id": 43,
+    "nome": "Battlefield 2042",
+    "preco": 149.9,
+    "descricao": "Guerra em larga escala com veículos e multiplayer.",
+    "emoji": "💥",
+    "categoria": "jogo"
+  },
+  {
+    "id": 44,
+    "nome": "Assassin's Creed Mirage",
+    "preco": 199.9,
+    "descricao": "Ação e furtividade em Bagdá.",
+    "emoji": "🗡️",
+    "categoria": "jogo"
+  },
+  {
+    "id": 45,
+    "nome": "Starfield",
+    "preco": 299.9,
+    "descricao": "Exploração espacial com planetas e bases.",
+    "emoji": "🚀",
+    "categoria": "jogo"
+  },
+  {
+    "id": 46,
+    "nome": "Baldur's Gate 3",
+    "preco": 299.9,
+    "descricao": "RPG por turnos com escolhas profundas e cooperativo.",
+    "emoji": "🐉",
+    "categoria": "jogo"
+  },
+  {
+    "id": 47,
+    "nome": "Diablo IV",
+    "preco": 279.9,
+    "descricao": "ARPG sombrio com classes, loot e chefes.",
+    "emoji": "😈",
+    "categoria": "jogo"
+  },
+  {
+    "id": 48,
+    "nome": "Palworld",
+    "preco": 149.9,
+    "descricao": "Sobrevivência com criaturas, crafting e exploração.",
+    "emoji": "🐾",
+    "categoria": "jogo"
+  },
+  {
+    "id": 49,
+    "nome": "Stardew Valley",
+    "preco": 49.9,
+    "descricao": "Fazenda, amizades e vida no campo.",
+    "emoji": "🌾",
+    "categoria": "jogo"
+  },
+  {
+    "id": 50,
+    "nome": "It Takes Two",
+    "preco": 99.9,
+    "descricao": "Aventura cooperativa para duas pessoas.",
+    "emoji": "🧩",
+    "categoria": "jogo"
+  },
+  {
+    "id": 51,
+    "nome": "PlayStation 5 Slim",
+    "preco": 3799.9,
+    "descricao": "Console com SSD rápido e controle DualSense.",
+    "emoji": "🎮",
+    "categoria": "console"
+  },
+  {
+    "id": 52,
+    "nome": "Xbox Series S",
+    "preco": 2199.9,
+    "descricao": "Console digital compacto com SSD e Game Pass.",
+    "emoji": "🎮",
+    "categoria": "console"
+  },
+  {
+    "id": 53,
+    "nome": "Nintendo Switch OLED",
+    "preco": 2499.9,
+    "descricao": "Console híbrido com tela OLED e controles destacáveis.",
+    "emoji": "🕹️",
+    "categoria": "console"
+  },
+  {
+    "id": 54,
+    "nome": "Steam Deck OLED",
+    "preco": 3499.9,
+    "descricao": "PC portátil para jogar sua biblioteca Steam.",
+    "emoji": "🖥️",
+    "categoria": "console"
+  },
+  {
+    "id": 55,
+    "nome": "Controle DualSense",
+    "preco": 449.9,
+    "descricao": "Controle sem fio com feedback tátil e gatilhos adaptáveis.",
+    "emoji": "🎮",
+    "categoria": "acessorio-gamer"
+  },
+  {
+    "id": 56,
+    "nome": "Controle Xbox Wireless",
+    "preco": 399.9,
+    "descricao": "Controle sem fio compatível com Xbox e PC.",
+    "emoji": "🎮",
+    "categoria": "acessorio-gamer"
   }
 ]

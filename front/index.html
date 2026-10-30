@@ -29,8 +29,53 @@
         <!-- PRODUTOS -->
         <section id="secao-produtos" class="secao">
             <h1>Produtos</h1>
-            <div id="produtosErro" class="error-message"></div>
+
+            <form id="formFiltrosProdutos" class="filtros-produtos" role="search">
+                <div class="filtro-busca">
+                    <label for="buscaProduto">Buscar por nome</label>
+                    <div class="busca-linha">
+                        <input type="search" id="buscaProduto" placeholder="Ex.: processador, teclado, monitor...">
+                        <button type="submit" class="submit-btn btn-pesquisar">Pesquisar</button>
+                    </div>
+                </div>
+
+                <div class="filtros-linha">
+                    <div class="filtro">
+                        <label for="categoriaProduto">Categoria</label>
+                        <select id="categoriaProduto">
+                            <option value="">Todas as categorias</option>
+                        </select>
+                    </div>
+
+                    <div class="filtro">
+                        <label for="precoMin">Preço mínimo</label>
+                        <input type="number" id="precoMin" min="0" step="0.01" placeholder="R$ 0,00">
+                    </div>
+
+                    <div class="filtro">
+                        <label for="precoMax">Preço máximo</label>
+                        <input type="number" id="precoMax" min="0" step="0.01" placeholder="R$ 9.999,00">
+                    </div>
+
+                    <div class="filtro">
+                        <label for="ordenarProdutos">Ordenar por</label>
+                        <select id="ordenarProdutos">
+                            <option value="">Padrão</option>
+                            <option value="preco_asc">Menor preço</option>
+                            <option value="preco_desc">Maior preço</option>
+                        </select>
+                    </div>
+
+                    <div class="filtro filtro-limpar">
+                        <button type="button" id="btnLimparFiltros" class="btn-limpar">Limpar filtros</button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="resumoProdutos" class="resumo-produtos" aria-live="polite"></div>
+            <div id="produtosErro" class="error-message" role="alert"></div>
             <div id="listaProdutos" class="grid-produtos"></div>
+            <nav id="paginacaoProdutos" class="paginacao" aria-label="Paginação de produtos"></nav>
         </section>
 
         <!-- CARRINHO -->

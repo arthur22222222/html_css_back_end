@@ -2,6 +2,20 @@
 // Ajuste aqui se sua API rodar em outro endereço/porta
 const API_BASE = "http://localhost:3000";
 
+// Quando o site é servido pelo index.js da raiz (porta 3001), a API de
+// produtos está na mesma origem. Nos demais casos, usa a API da pasta front.
+const API_PRODUTOS = window.location.port === "3001" ? "" : API_BASE;
+
+// ===================== ESTADO DOS FILTROS =====================
+const estadoProdutos = {
+    busca: "",
+    categoria: "",
+    precoMin: "",
+    precoMax: "",
+    ordenar: "",
+    pagina: 1,
+};
+
 // ===================== NAVEGAÇÃO =====================
 function mostrarSecao(nome) {
     document.querySelectorAll(".secao").forEach((s) => (s.hidden = true));
@@ -11,7 +25,7 @@ function mostrarSecao(nome) {
         btn.classList.toggle("active", btn.dataset.secao === nome);
     });
 
-    if (nome === "produtos") carregarProdutos();
+    if (nome === "produtos") carregarProdutos(estadoProdutos.pagina);
     if (nome === "carrinho") renderCarrinho();
 }
 
@@ -163,35 +177,217 @@ document.getElementById("formCadastro").addEventListener("submit", async (e) => 
 });
 
 // ===================== PRODUTOS =====================
-async function carregarProdutos() {
+const NOMES_CATEGORIAS = {
+    processador: "Processadores",
+    "placa-mae": "Placas-mãe",
+    memoria: "Memórias",
+    armazenamento: "Armazenamento",
+    "placa-de-video": "Placas de vídeo",
+    fonte: "Fontes",
+    gabinete: "Gabinetes",
+    periferico: "Periféricos",
+    monitor: "Monitores",
+    vestuario: "Vestuário",
+    calcado: "Calçados",
+    acessorio: "Acessórios",
+    audio: "Áudio",
+    utilidade: "Utilidades",
+    jogo: "Jogos",
+    console: "Consoles",
+    "acessorio-gamer": "Acessórios Gamer",
+};
+
+let requisicaoProdutos = 0;
+let timerBusca = null;
+
+function escaparHtml(valor) {
+    return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function formatarPreco(valor) {
+    return Number(valor).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+    });
+}
+
+function formatarCategoria(categoria) {
+    const chave = String(categoria || "").toLowerCase();
+    if (NOMES_CATEGORIAS[chave]) return NOMES_CATEGORIAS[chave];
+    return chave
+        .replace(/[-_]/g, " ")
+        .replace(/\b\w/g, (letra) => letra.toUpperCase());
+}
+
+function lerFiltrosDoFormulario() {
+    estadoProdutos.busca = document.getElementById("buscaProduto").value.trim();
+    estadoProdutos.categoria = document.getElementById("categoriaProduto").value;
+    estadoProdutos.precoMin = document.getElementById("precoMin").value.trim();
+    estadoProdutos.precoMax = document.getElementById("precoMax").value.trim();
+    estadoProdutos.ordenar = document.getElementById("ordenarProdutos").value;
+    estadoProdutos.pagina = 1;
+}
+
+function aplicarFiltros() {
+    lerFiltrosDoFormulario();
+
+    const precoMin = estadoProdutos.precoMin === "" ? null : Number(estadoProdutos.precoMin);
+    const precoMax = estadoProdutos.precoMax === "" ? null : Number(estadoProdutos.precoMax);
+
+    if (precoMin !== null && precoMax !== null && precoMin > precoMax) {
+        document.getElementById("produtosErro").textContent =
+            "O preço mínimo não pode ser maior que o preço máximo.";
+        return;
+    }
+
+    carregarProdutos(1);
+}
+
+function atualizarCategorias(categorias) {
+    const select = document.getElementById("categoriaProduto");
+    const categoriaSelecionada = estadoProdutos.categoria || select.value;
+
+    select.innerHTML = '<option value="">Todas as categorias</option>';
+    (categorias || []).forEach((categoria) => {
+        const option = document.createElement("option");
+        option.value = categoria;
+        option.textContent = formatarCategoria(categoria);
+        select.appendChild(option);
+    });
+
+    const existe = [...select.options].some((option) => option.value === categoriaSelecionada);
+    select.value = existe ? categoriaSelecionada : "";
+    estadoProdutos.categoria = select.value;
+}
+
+function renderPaginacao(paginaAtual, totalPaginas) {
+    const nav = document.getElementById("paginacaoProdutos");
+    nav.innerHTML = "";
+    if (totalPaginas <= 1) return;
+
+    function criarBotao(texto, pagina, opcoes = {}) {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.textContent = texto;
+        if (pagina !== null) botao.dataset.pagina = pagina;
+        if (opcoes.ativo) {
+            botao.classList.add("ativa");
+            botao.setAttribute("aria-current", "page");
+        }
+        if (opcoes.desabilitado) botao.disabled = true;
+        if (opcoes.ariaLabel) botao.setAttribute("aria-label", opcoes.ariaLabel);
+        return botao;
+    }
+
+    nav.appendChild(
+        criarBotao("« Anterior", paginaAtual - 1, {
+            desabilitado: paginaAtual === 1,
+            ariaLabel: "Página anterior",
+        })
+    );
+
+    for (let i = 1; i <= totalPaginas; i++) {
+        nav.appendChild(
+            criarBotao(String(i), i, {
+                ativo: i === paginaAtual,
+                ariaLabel: `Página ${i}`,
+            })
+        );
+    }
+
+    nav.appendChild(
+        criarBotao("Próxima »", paginaAtual + 1, {
+            desabilitado: paginaAtual === totalPaginas,
+            ariaLabel: "Próxima página",
+        })
+    );
+}
+
+async function carregarProdutos(pagina = 1) {
     const lista = document.getElementById("listaProdutos");
     const erroEl = document.getElementById("produtosErro");
+    const resumoEl = document.getElementById("resumoProdutos");
+    const paginacaoEl = document.getElementById("paginacaoProdutos");
+    const numeroRequisicao = ++requisicaoProdutos;
+
+    estadoProdutos.pagina = Math.max(1, Number(pagina) || 1);
     erroEl.textContent = "";
-    lista.innerHTML = "<p>Carregando produtos...</p>";
+    resumoEl.textContent = "";
+    paginacaoEl.innerHTML = "";
+    lista.innerHTML = '<p class="aviso">Carregando produtos...</p>';
+
+    const params = new URLSearchParams();
+    if (estadoProdutos.busca) params.set("busca", estadoProdutos.busca);
+    if (estadoProdutos.categoria) params.set("categoria", estadoProdutos.categoria);
+    if (estadoProdutos.precoMin !== "") params.set("preco_min", estadoProdutos.precoMin);
+    if (estadoProdutos.precoMax !== "") params.set("preco_max", estadoProdutos.precoMax);
+    if (estadoProdutos.ordenar) params.set("ordenar", estadoProdutos.ordenar);
+    params.set("pagina", estadoProdutos.pagina);
 
     try {
-        const resposta = await fetch(`${API_BASE}/produtos`);
-        const produtos = await resposta.json();
+        const resposta = await fetch(`${API_PRODUTOS}/produtos?${params.toString()}`, {
+            cache: "no-store",
+        });
+        const dados = await resposta.json();
+
+        if (numeroRequisicao !== requisicaoProdutos) return;
 
         if (!resposta.ok) {
             lista.innerHTML = "";
-            erroEl.textContent = produtos.resposta || "Não foi possível carregar os produtos.";
+            erroEl.textContent = dados.resposta || dados.erro || "Não foi possível carregar os produtos.";
             return;
         }
 
+        // Aceita a resposta paginada nova e também um array (API antiga).
+        const respostaPaginada = !Array.isArray(dados);
+        const produtos = respostaPaginada ? dados.produtos || [] : dados;
+        const total = respostaPaginada ? Number(dados.total) || 0 : produtos.length;
+        const totalPaginas = respostaPaginada ? Math.max(1, Number(dados.totalPaginas) || 1) : 1;
+        const paginaAtual = respostaPaginada ? Math.max(1, Number(dados.pagina) || 1) : 1;
+        const limite = respostaPaginada ? Number(dados.limite) || produtos.length : produtos.length;
+        const categorias = respostaPaginada
+            ? dados.categorias || []
+            : [...new Set(produtos.map((p) => p.categoria).filter(Boolean))];
+
+        estadoProdutos.pagina = paginaAtual;
+        atualizarCategorias(categorias);
+
         lista.innerHTML = "";
+
+        if (produtos.length === 0) {
+            lista.innerHTML = '<p class="aviso">Nenhum produto encontrado com esses filtros.</p>';
+            resumoEl.textContent = "0 produtos encontrados";
+            return;
+        }
+
         produtos.forEach((produto) => {
             const card = document.createElement("div");
             card.className = "card-produto";
+            const categoria = produto.categoria
+                ? `<span class="card-produto-categoria">${escaparHtml(formatarCategoria(produto.categoria))}</span>`
+                : "";
             card.innerHTML = `
-                <div class="card-produto-emoji">${produto.emoji || "🛒"}</div>
-                <h3>${produto.nome}</h3>
-                <p class="card-produto-desc">${produto.descricao || ""}</p>
-                <p class="card-produto-preco">R$ ${Number(produto.preco).toFixed(2).replace(".", ",")}</p>
-                <button class="submit-btn" data-add-id="${produto.id}">Adicionar ao carrinho</button>
+                <div class="card-produto-emoji">${escaparHtml(produto.emoji || "🛒")}</div>
+                ${categoria}
+                <h3>${escaparHtml(produto.nome)}</h3>
+                <p class="card-produto-desc">${escaparHtml(produto.descricao || "")}</p>
+                <p class="card-produto-preco">${formatarPreco(produto.preco)}</p>
+                <button class="submit-btn" data-add-id="${escaparHtml(produto.id)}">Adicionar ao carrinho</button>
             `;
             lista.appendChild(card);
         });
+
+        const primeiro = (paginaAtual - 1) * limite + 1;
+        const ultimo = primeiro + produtos.length - 1;
+        resumoEl.textContent =
+            `Mostrando ${primeiro}–${ultimo} de ${total} produto(s) • Página ${paginaAtual} de ${totalPaginas}`;
+
+        renderPaginacao(paginaAtual, totalPaginas);
 
         lista.querySelectorAll("[data-add-id]").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -200,10 +396,46 @@ async function carregarProdutos() {
             });
         });
     } catch (error) {
+        if (numeroRequisicao !== requisicaoProdutos) return;
         lista.innerHTML = "";
         erroEl.textContent = "Erro ao conectar com o servidor: " + error.message;
     }
 }
+
+// ===================== EVENTOS DOS FILTROS =====================
+document.getElementById("formFiltrosProdutos").addEventListener("submit", (e) => {
+    e.preventDefault();
+    aplicarFiltros();
+});
+
+document.getElementById("buscaProduto").addEventListener("input", () => {
+    clearTimeout(timerBusca);
+    timerBusca = setTimeout(aplicarFiltros, 450);
+});
+
+document.getElementById("categoriaProduto").addEventListener("change", aplicarFiltros);
+document.getElementById("ordenarProdutos").addEventListener("change", aplicarFiltros);
+document.getElementById("precoMin").addEventListener("change", aplicarFiltros);
+document.getElementById("precoMax").addEventListener("change", aplicarFiltros);
+
+document.getElementById("btnLimparFiltros").addEventListener("click", () => {
+    document.getElementById("formFiltrosProdutos").reset();
+    estadoProdutos.busca = "";
+    estadoProdutos.categoria = "";
+    estadoProdutos.precoMin = "";
+    estadoProdutos.precoMax = "";
+    estadoProdutos.ordenar = "";
+    estadoProdutos.pagina = 1;
+    carregarProdutos(1);
+});
+
+document.getElementById("paginacaoProdutos").addEventListener("click", (e) => {
+    const botao = e.target.closest("button[data-pagina]");
+    if (!botao || botao.disabled) return;
+
+    carregarProdutos(Number(botao.dataset.pagina));
+    document.getElementById("secao-produtos").scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 // ===================== CARRINHO (localStorage) =====================
 // Obs: a API atual não tem endpoints de carrinho, então ele fica salvo no
@@ -218,6 +450,7 @@ function salvarCarrinho(carrinho) {
 }
 
 function adicionarAoCarrinho(produto) {
+    if (!produto) return;
     const carrinho = getCarrinho();
     const item = carrinho.find((i) => i.id === produto.id);
     if (item) {

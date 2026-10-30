@@ -101,12 +101,101 @@ app.get("/Clientes/perfil", autenticar, async (req, res) => {
 });
 
 // ---------- PRODUTOS (lidos do front/produtos.json) ----------
+// Filtros aceitos em GET /produtos:
+//   busca / nome / q  -> busca parcial por nome (sem diferenciar maiúsculas/acentos)
+//   categoria         -> exemplo: categoria=processador
+//   preco_min         -> exemplo: preco_min=200
+//   preco_max         -> exemplo: preco_max=700
+//   ordenar           -> preco_asc | preco_desc (também aceita ordem=asc|desc)
+//   pagina            -> página da listagem (10 produtos por página)
 const arquivoProdutos = path.join(__dirname, "front", "produtos.json");
+const PRODUTOS_POR_PAGINA = 10;
+
+function normalizarTexto(valor) {
+  return String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function converterNumero(valor) {
+  if (valor === undefined || valor === null || String(valor).trim() === "") return null;
+  const numero = Number(String(valor).replace(",", "."));
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function obterOrdenacao(query) {
+  const ordenar = normalizarTexto(query.ordenar || query.sort);
+  const ordem = normalizarTexto(query.ordem);
+  const campo = normalizarTexto(query.ordenar_por);
+
+  if (["preco_asc", "asc", "menor", "menor_preco"].includes(ordenar)) return "preco_asc";
+  if (["preco_desc", "desc", "maior", "maior_preco"].includes(ordenar)) return "preco_desc";
+  if ((ordem === "asc" || ordem === "crescente") && (!campo || campo === "preco")) return "preco_asc";
+  if ((ordem === "desc" || ordem === "decrescente") && (!campo || campo === "preco")) return "preco_desc";
+  return null;
+}
+
+function filtrarProdutos(produtos, query) {
+  const busca = normalizarTexto(query.busca || query.nome || query.q);
+  const categoria = normalizarTexto(query.categoria);
+  const precoMin = converterNumero(query.preco_min);
+  const precoMax = converterNumero(query.preco_max);
+  const ordenacao = obterOrdenacao(query);
+
+  const filtrados = produtos.filter((produto) => {
+    const nome = normalizarTexto(produto.nome);
+    const categoriaProduto = normalizarTexto(produto.categoria);
+    const preco = converterNumero(produto.preco);
+
+    if (busca && !nome.includes(busca)) return false;
+    if (categoria && categoriaProduto !== categoria) return false;
+    if (precoMin !== null && (preco === null || preco < precoMin)) return false;
+    if (precoMax !== null && (preco === null || preco > precoMax)) return false;
+    return true;
+  });
+
+  if (ordenacao === "preco_asc") {
+    filtrados.sort((a, b) => (converterNumero(a.preco) ?? 0) - (converterNumero(b.preco) ?? 0));
+  } else if (ordenacao === "preco_desc") {
+    filtrados.sort((a, b) => (converterNumero(b.preco) ?? 0) - (converterNumero(a.preco) ?? 0));
+  }
+
+  return filtrados;
+}
+
+function montarRespostaProdutos(produtos, query) {
+  const filtrados = filtrarProdutos(produtos, query);
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / PRODUTOS_POR_PAGINA));
+  const paginaSolicitada = Number.parseInt(query.pagina, 10);
+  const pagina = Number.isFinite(paginaSolicitada) && paginaSolicitada > 0
+    ? Math.min(paginaSolicitada, totalPaginas)
+    : 1;
+  const offset = (pagina - 1) * PRODUTOS_POR_PAGINA;
+
+  const categorias = [...new Set(produtos.map((p) => p.categoria).filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
+
+  return {
+    produtos: filtrados.slice(offset, offset + PRODUTOS_POR_PAGINA),
+    total,
+    pagina,
+    limite: PRODUTOS_POR_PAGINA,
+    totalPaginas,
+    offset,
+    categorias,
+  };
+}
 
 app.get("/produtos", (req, res) => {
   try {
     const produtos = JSON.parse(fs.readFileSync(arquivoProdutos, "utf-8"));
-    res.status(200).json(produtos);
+    if (!Array.isArray(produtos)) {
+      return res.status(500).json({ erro: "O arquivo produtos.json deve conter uma lista de produtos" });
+    }
+    res.status(200).json(montarRespostaProdutos(produtos, req.query));
   } catch (error) {
     res.status(500).json({ erro: "Não foi possível ler produtos.json: " + error.message });
   }
