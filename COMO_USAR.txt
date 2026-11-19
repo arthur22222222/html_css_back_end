@@ -1,0 +1,49 @@
+COMO RODAR O PROJETO
+====================
+
+O Node.js ja esta instalado em:
+C:\Users\tui10\AppData\Local\Programs\nodejs
+
+OPCAO 1 - MAIS FACIL
+--------------------
+1. Abra a pasta do projeto.
+2. De dois cliques em "iniciar.bat".
+3. Abra o navegador em: http://localhost:3000
+
+OPCAO 2 - PELO POWERSHELL
+-------------------------
+1. Abra o PowerShell na pasta do projeto.
+2. Rode:
+   node index.js
+3. Abra o navegador em: http://localhost:3000
+
+IMPORTANTE
+----------
+- Use "node index.js" para iniciar sem apagar os dados.
+- "npm start" executa a migration e recria o banco, apagando
+  compras e usuarios cadastrados.
+- Se a porta 3000 estiver em uso, feche o outro servidor antes.
+
+IMAGENS DOS JOGOS
+-----------------
+As capas dos 49 jogos ficam na pasta:
+img\games\1.jpg ate img\games\49.jpg
+Nao apague essa pasta.
+
+LOGIN PRINCIPAL
+---------------
+E-mail: tui1020kg1@gmail.com
+Senha:  22102009
+
+OUTROS USUARIOS DE TESTE
+------------------------
+beatriz.lima@email.com
+bruno.costa@email.com
+carla.mendes@email.com
+diego.souza@email.com
+eduarda.rocha@email.com
+felipe.alves@email.com
+gabriela.dias@email.com
+henrique.martins@email.com
+
+Senha de todos: senha123

@@ -1,10 +1,92 @@
 // ===================== CONFIG =====================
-// Ajuste aqui se sua API rodar em outro endereço/porta
-const API_BASE = "http://localhost:3000";
+// Servido pelo backend (porta 3000): usa a mesma origem.
+// Aberto via Live Server ou direto pelo arquivo: usa a API local.
+const API_BASE = window.location.port === "3000"
+    ? window.location.origin
+    : "http://localhost:3000";
 
-// Quando o site é servido pelo index.js da raiz (porta 3001), a API de
-// produtos está na mesma origem. Nos demais casos, usa a API da pasta front.
-const API_PRODUTOS = window.location.port === "3001" ? "" : API_BASE;
+const CARRINHO_KEY = "carrinho_v2";
+const PRODUTOS_POR_PAGINA = 10;
+
+// ===================== NOTIFICAÇÕES ANIMADAS =====================
+const NOTIFICACAO_ICONES = {
+    sucesso: "✅",
+    erro: "❌",
+    aviso: "⚠️",
+    info: "ℹ️",
+};
+
+const NOTIFICACAO_TITULOS = {
+    sucesso: "Sucesso",
+    erro: "Erro",
+    aviso: "Atenção",
+    info: "Informação",
+};
+
+function mostrarNotificacao(mensagem, tipo = "info", duracao = 4200) {
+    const container = document.getElementById("notificacoes");
+    if (!container) return;
+
+    const tipoFinal = NOTIFICACAO_ICONES[tipo] ? tipo : "info";
+    const duracaoFinal = Math.max(1500, Number(duracao) || 4200);
+
+    // Mantém no máximo 4 notificações na tela.
+    while (container.children.length >= 4) {
+        container.firstElementChild.remove();
+    }
+
+    const notificacao = document.createElement("div");
+    notificacao.className = `notificacao notificacao-${tipoFinal}`;
+    notificacao.style.setProperty("--notif-duracao", `${duracaoFinal}ms`);
+    notificacao.setAttribute("role", tipoFinal === "erro" ? "alert" : "status");
+
+    const icone = document.createElement("div");
+    icone.className = "notificacao-icone";
+    icone.setAttribute("aria-hidden", "true");
+    icone.textContent = NOTIFICACAO_ICONES[tipoFinal];
+
+    const conteudo = document.createElement("div");
+    conteudo.className = "notificacao-conteudo";
+
+    const titulo = document.createElement("div");
+    titulo.className = "notificacao-titulo";
+    titulo.textContent = NOTIFICACAO_TITULOS[tipoFinal];
+
+    const texto = document.createElement("div");
+    texto.className = "notificacao-mensagem";
+    texto.textContent = mensagem;
+
+    conteudo.append(titulo, texto);
+
+    const fechar = document.createElement("button");
+    fechar.type = "button";
+    fechar.className = "notificacao-fechar";
+    fechar.setAttribute("aria-label", "Fechar notificação");
+    fechar.textContent = "×";
+
+    const progresso = document.createElement("div");
+    progresso.className = "notificacao-progresso";
+    progresso.setAttribute("aria-hidden", "true");
+
+    notificacao.append(icone, conteudo, fechar, progresso);
+    container.appendChild(notificacao);
+
+    let removendo = false;
+    let timer = null;
+
+    function remover() {
+        if (removendo) return;
+        removendo = true;
+        clearTimeout(timer);
+        notificacao.classList.add("saindo");
+
+        // A animação de saída dura 0.3s; o timeout remove o elemento do DOM.
+        setTimeout(() => notificacao.remove(), 320);
+    }
+
+    timer = setTimeout(remover, duracaoFinal);
+    fechar.addEventListener("click", remover);
+}
 
 // ===================== ESTADO DOS FILTROS =====================
 const estadoProdutos = {
@@ -39,7 +121,13 @@ document.querySelectorAll("[data-secao]").forEach((el) => {
 // ===================== SESSÃO (LOGIN) =====================
 function getUsuarioLogado() {
     const raw = localStorage.getItem("usuarioLogado");
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try {
+        const usuario = JSON.parse(raw);
+        return usuario && usuario.token ? usuario : null;
+    } catch {
+        return null;
+    }
 }
 
 function atualizarNavbarUsuario() {
@@ -79,73 +167,32 @@ document.getElementById("formLogin").addEventListener("submit", async (e) => {
         const dados = await resposta.json();
 
         if (!resposta.ok) {
-            erroEl.textContent = dados.resposta || "Não foi possível entrar.";
+            erroEl.textContent = dados.msg || dados.erro || "Não foi possível entrar.";
             return;
         }
 
-        localStorage.setItem("usuarioLogado", JSON.stringify(dados.usuario));
+        localStorage.setItem("usuarioLogado", JSON.stringify({
+            nome: dados.nome,
+            token: dados.token,
+        }));
         atualizarNavbarUsuario();
         document.getElementById("formLogin").reset();
         mostrarSecao("produtos");
+        mostrarNotificacao(`Bem-vindo, ${dados.nome}!`, "sucesso");
     } catch (error) {
         erroEl.textContent = "Erro ao conectar com o servidor: " + error.message;
     }
 });
 
-// ===================== CEP (CADASTRO) =====================
-function pesquisar(cep) {
-    const cepInput = document.getElementById("cep");
-    const erroCep = document.getElementById("cepErro");
-
-    cep = cep.replace(/\D/g, "");
-
-    if (cep.length === 8) {
-        cepInput.classList.remove("invalid");
-        cepInput.setCustomValidity("");
-        erroCep.textContent = "";
-
-        const link = "https://viacep.com.br/ws/" + cep + "/json/?callback=preencherEndereco";
-        var script = document.createElement("script");
-        script.src = link;
-        document.body.appendChild(script);
-    } else if (cep.length > 0) {
-        cepInput.classList.add("invalid");
-        cepInput.setCustomValidity("CEP deve conter 8 dígitos.");
-        erroCep.textContent = "CEP inválido: informe exatamente 8 números.";
-    } else {
-        cepInput.classList.remove("invalid");
-        cepInput.setCustomValidity("");
-        erroCep.textContent = "";
-    }
-}
-
-function preencherEndereco(conteudo) {
-    if (!("erro" in conteudo)) {
-        document.getElementById("rua").value = conteudo.logradouro;
-        document.getElementById("bairro").value = conteudo.bairro;
-        document.getElementById("cidade").value = conteudo.localidade;
-        document.getElementById("estado").value = conteudo.uf;
-    } else {
-        alert("CEP não encontrado!");
-    }
-}
-
 // ===================== CADASTRO =====================
-// Os nomes dos campos abaixo seguem exatamente o que a API espera (bd.json)
+// Campos que a tabela "cliente" do backend possui.
 function pegarDadosCadastro() {
     return {
-        nome: document.getElementById("nome").value,
-        cpf: document.getElementById("cpf").value,
-        gmail: document.getElementById("email").value,
-        telefone: document.getElementById("celular").value,
+        nome: document.getElementById("nome").value.trim(),
+        cpf: document.getElementById("cpf").value.trim(),
+        celular: document.getElementById("celular").value.replace(/\s+/g, ""),
+        email: document.getElementById("email").value.trim(),
         senha: document.getElementById("senha").value,
-        cep: document.getElementById("cep").value,
-        rua: document.getElementById("rua").value,
-        "numero casa": document.getElementById("numero_casa").value,
-        bairro: document.getElementById("bairro").value,
-        cidade: document.getElementById("cidade").value,
-        estado: document.getElementById("estado").value,
-        data_nasc: document.getElementById("dt_nasc").value,
     };
 }
 
@@ -156,7 +203,7 @@ document.getElementById("formCadastro").addEventListener("submit", async (e) => 
     const dados = pegarDadosCadastro();
 
     try {
-        const resposta = await fetch(`${API_BASE}/cliente/cadastro`, {
+        const resposta = await fetch(`${API_BASE}/cliente`, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(dados),
@@ -164,11 +211,15 @@ document.getElementById("formCadastro").addEventListener("submit", async (e) => 
         const corpo = await resposta.json();
 
         if (!resposta.ok) {
-            erroEl.textContent = corpo.resposta || "Erro ao cadastrar!";
+            let mensagem = corpo.erro || corpo.msg || "Erro ao cadastrar!";
+            if (String(mensagem).toLowerCase().includes("duplicate")) {
+                mensagem = "E-mail ou CPF já cadastrado.";
+            }
+            erroEl.textContent = mensagem;
             return;
         }
 
-        alert("Cliente cadastrado com sucesso!");
+        mostrarNotificacao("Cliente cadastrado com sucesso!", "sucesso");
         document.getElementById("formCadastro").reset();
         mostrarSecao("login");
     } catch (error) {
@@ -178,27 +229,37 @@ document.getElementById("formCadastro").addEventListener("submit", async (e) => 
 
 // ===================== PRODUTOS =====================
 const NOMES_CATEGORIAS = {
-    processador: "Processadores",
-    "placa-mae": "Placas-mãe",
-    memoria: "Memórias",
-    armazenamento: "Armazenamento",
-    "placa-de-video": "Placas de vídeo",
-    fonte: "Fontes",
-    gabinete: "Gabinetes",
-    periferico: "Periféricos",
-    monitor: "Monitores",
-    vestuario: "Vestuário",
-    calcado: "Calçados",
-    acessorio: "Acessórios",
-    audio: "Áudio",
-    utilidade: "Utilidades",
-    jogo: "Jogos",
-    console: "Consoles",
-    "acessorio-gamer": "Acessórios Gamer",
+    fps: "FPS",
+    rpg: "RPG",
+    aventura: "Aventura",
+    estrategia: "Estratégia",
+    esporte: "Esporte",
+    simulacao: "Simulação",
+    mmo: "MMO",
+    "battle royale": "Battle Royale",
+};
+
+const EMOJIS_CATEGORIAS = {
+    fps: "🎯",
+    rpg: "⚔️",
+    aventura: "🗺️",
+    estrategia: "🧠",
+    esporte: "⚽",
+    simulacao: "🛠️",
+    mmo: "🌐",
+    "battle royale": "🪂",
 };
 
 let requisicaoProdutos = 0;
 let timerBusca = null;
+
+function normalizar(valor) {
+    return String(valor ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase();
+}
 
 function escaparHtml(valor) {
     return String(valor ?? "")
@@ -217,11 +278,23 @@ function formatarPreco(valor) {
 }
 
 function formatarCategoria(categoria) {
-    const chave = String(categoria || "").toLowerCase();
+    const chave = normalizar(categoria);
     if (NOMES_CATEGORIAS[chave]) return NOMES_CATEGORIAS[chave];
-    return chave
-        .replace(/[-_]/g, " ")
-        .replace(/\b\w/g, (letra) => letra.toUpperCase());
+
+    const texto = String(categoria || "").replace(/[-_]/g, " ").trim();
+    return texto.replace(/\b\w/g, (letra) => letra.toUpperCase());
+}
+
+// Usa a capa cadastrada em caminho_img. O emoji da categoria fica como
+// fallback caso a imagem não exista ou não carregue.
+function emojiProduto(produto) {
+    return EMOJIS_CATEGORIAS[normalizar(produto.categoria)] || "🎮";
+}
+
+function urlImagemProduto(produto) {
+    const caminho = String(produto?.caminho_img || "").trim().replace(/^\/+/, "");
+    if (!caminho) return "";
+    return `${API_BASE}/img/${caminho}`;
 }
 
 function lerFiltrosDoFormulario() {
@@ -321,69 +394,104 @@ async function carregarProdutos(pagina = 1) {
     paginacaoEl.innerHTML = "";
     lista.innerHTML = '<p class="aviso">Carregando produtos...</p>';
 
-    const params = new URLSearchParams();
-    if (estadoProdutos.busca) params.set("busca", estadoProdutos.busca);
-    if (estadoProdutos.categoria) params.set("categoria", estadoProdutos.categoria);
-    if (estadoProdutos.precoMin !== "") params.set("preco_min", estadoProdutos.precoMin);
-    if (estadoProdutos.precoMax !== "") params.set("preco_max", estadoProdutos.precoMax);
-    if (estadoProdutos.ordenar) params.set("ordenar", estadoProdutos.ordenar);
-    params.set("pagina", estadoProdutos.pagina);
-
     try {
-        const resposta = await fetch(`${API_PRODUTOS}/produtos?${params.toString()}`, {
-            cache: "no-store",
-        });
+        const resposta = await fetch(`${API_BASE}/produto`, { cache: "no-store" });
         const dados = await resposta.json();
 
         if (numeroRequisicao !== requisicaoProdutos) return;
 
         if (!resposta.ok) {
             lista.innerHTML = "";
-            erroEl.textContent = dados.resposta || dados.erro || "Não foi possível carregar os produtos.";
+            erroEl.textContent =
+                dados.erro || dados.resposta || "Não foi possível carregar os produtos.";
             return;
         }
 
-        // Aceita a resposta paginada nova e também um array (API antiga).
-        const respostaPaginada = !Array.isArray(dados);
-        const produtos = respostaPaginada ? dados.produtos || [] : dados;
-        const total = respostaPaginada ? Number(dados.total) || 0 : produtos.length;
-        const totalPaginas = respostaPaginada ? Math.max(1, Number(dados.totalPaginas) || 1) : 1;
-        const paginaAtual = respostaPaginada ? Math.max(1, Number(dados.pagina) || 1) : 1;
-        const limite = respostaPaginada ? Number(dados.limite) || produtos.length : produtos.length;
-        const categorias = respostaPaginada
-            ? dados.categorias || []
-            : [...new Set(produtos.map((p) => p.categoria).filter(Boolean))];
-
-        estadoProdutos.pagina = paginaAtual;
+        const produtos = Array.isArray(dados) ? dados : dados.produtos || [];
+        const categorias = [...new Set(produtos.map((p) => p.categoria).filter(Boolean))]
+            .sort((a, b) => String(a).localeCompare(String(b), "pt-BR"));
         atualizarCategorias(categorias);
+
+        const busca = normalizar(estadoProdutos.busca);
+        const categoria = normalizar(estadoProdutos.categoria);
+        const precoMin = estadoProdutos.precoMin === "" ? null : Number(estadoProdutos.precoMin);
+        const precoMax = estadoProdutos.precoMax === "" ? null : Number(estadoProdutos.precoMax);
+
+        const filtrados = produtos.filter((produto) => {
+            const nome = normalizar(produto.nome);
+            const categoriaProduto = normalizar(produto.categoria);
+            const preco = Number(produto.preco);
+
+            if (busca && !nome.includes(busca)) return false;
+            if (categoria && categoriaProduto !== categoria) return false;
+            if (precoMin !== null && (Number.isNaN(preco) || preco < precoMin)) return false;
+            if (precoMax !== null && (Number.isNaN(preco) || preco > precoMax)) return false;
+            return true;
+        });
+
+        if (estadoProdutos.ordenar === "preco_asc") {
+            filtrados.sort((a, b) => Number(a.preco) - Number(b.preco));
+        } else if (estadoProdutos.ordenar === "preco_desc") {
+            filtrados.sort((a, b) => Number(b.preco) - Number(a.preco));
+        }
+
+        const total = filtrados.length;
+        const totalPaginas = Math.max(1, Math.ceil(total / PRODUTOS_POR_PAGINA));
+        const paginaAtual = Math.min(estadoProdutos.pagina, totalPaginas);
+        estadoProdutos.pagina = paginaAtual;
+
+        const inicio = (paginaAtual - 1) * PRODUTOS_POR_PAGINA;
+        const produtosDaPagina = filtrados.slice(inicio, inicio + PRODUTOS_POR_PAGINA);
 
         lista.innerHTML = "";
 
-        if (produtos.length === 0) {
+        if (total === 0) {
             lista.innerHTML = '<p class="aviso">Nenhum produto encontrado com esses filtros.</p>';
             resumoEl.textContent = "0 produtos encontrados";
             return;
         }
 
-        produtos.forEach((produto) => {
-            const card = document.createElement("div");
-            card.className = "card-produto";
-            const categoria = produto.categoria
+        produtosDaPagina.forEach((produto) => {
+            const estoque = Number(produto.quantidade_img);
+            const semEstoque = Number.isFinite(estoque) && estoque <= 0;
+            const categoriaHtml = produto.categoria
                 ? `<span class="card-produto-categoria">${escaparHtml(formatarCategoria(produto.categoria))}</span>`
                 : "";
+
+            const imagemUrl = urlImagemProduto(produto);
+            const imagemHtml = imagemUrl
+                ? `<img class="card-produto-img" alt="Capa de ${escaparHtml(produto.nome)}" loading="lazy" data-src="${escaparHtml(imagemUrl)}">`
+                : "";
+
+            const card = document.createElement("div");
+            card.className = "card-produto";
             card.innerHTML = `
-                <div class="card-produto-emoji">${escaparHtml(produto.emoji || "🛒")}</div>
-                ${categoria}
+                <div class="card-produto-imagem" data-emoji="${escaparHtml(emojiProduto(produto))}">${imagemHtml}</div>
+                ${categoriaHtml}
                 <h3>${escaparHtml(produto.nome)}</h3>
                 <p class="card-produto-desc">${escaparHtml(produto.descricao || "")}</p>
                 <p class="card-produto-preco">${formatarPreco(produto.preco)}</p>
-                <button class="submit-btn" data-add-id="${escaparHtml(produto.id)}">Adicionar ao carrinho</button>
+                <p class="card-produto-estoque">${
+                    semEstoque
+                        ? "Sem estoque"
+                        : `Em estoque: ${Number.isFinite(estoque) ? estoque : "—"}`
+                }</p>
+                <button class="submit-btn" data-add-id="${escaparHtml(produto.id)}" ${
+                    semEstoque ? "disabled" : ""
+                }>${semEstoque ? "Sem estoque" : "Adicionar ao carrinho"}</button>
             `;
             lista.appendChild(card);
+
+            const imagem = card.querySelector(".card-produto-img");
+            if (imagem) {
+                imagem.addEventListener("error", () => imagem.remove(), { once: true });
+                imagem.src = imagem.dataset.src;
+                imagem.removeAttribute("data-src");
+            }
         });
 
-        const primeiro = (paginaAtual - 1) * limite + 1;
-        const ultimo = primeiro + produtos.length - 1;
+        const primeiro = inicio + 1;
+        const ultimo = inicio + produtosDaPagina.length;
         resumoEl.textContent =
             `Mostrando ${primeiro}–${ultimo} de ${total} produto(s) • Página ${paginaAtual} de ${totalPaginas}`;
 
@@ -391,7 +499,7 @@ async function carregarProdutos(pagina = 1) {
 
         lista.querySelectorAll("[data-add-id]").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const produto = produtos.find((p) => String(p.id) === btn.dataset.addId);
+                const produto = produtosDaPagina.find((p) => String(p.id) === btn.dataset.addId);
                 adicionarAoCarrinho(produto);
             });
         });
@@ -438,43 +546,92 @@ document.getElementById("paginacaoProdutos").addEventListener("click", (e) => {
 });
 
 // ===================== CARRINHO (localStorage) =====================
-// Obs: a API atual não tem endpoints de carrinho, então ele fica salvo no
-// navegador. Se quiser persistir no backend, dá pra adicionar rotas depois.
+// Chave nova para não misturar com o carrinho antigo (catálogo antigo).
 function getCarrinho() {
-    return JSON.parse(localStorage.getItem("carrinho") || "[]");
+    try {
+        const bruto = JSON.parse(localStorage.getItem(CARRINHO_KEY) || "[]");
+        if (!Array.isArray(bruto)) return [];
+
+        return bruto
+            .map((item) => ({
+                id: Number(item.id),
+                nome: String(item.nome || ""),
+                preco: Number(item.preco) || 0,
+                qtd: Math.max(1, Number(item.qtd) || 1),
+                estoque: item.estoque === null || item.estoque === undefined
+                    ? null
+                    : Number(item.estoque),
+            }))
+            .filter((item) => Number.isInteger(item.id));
+    } catch {
+        return [];
+    }
 }
 
 function salvarCarrinho(carrinho) {
-    localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    localStorage.setItem(CARRINHO_KEY, JSON.stringify(carrinho));
     atualizarContadorCarrinho();
 }
 
 function adicionarAoCarrinho(produto) {
     if (!produto) return;
-    const carrinho = getCarrinho();
-    const item = carrinho.find((i) => i.id === produto.id);
-    if (item) {
-        item.qtd += 1;
-    } else {
-        carrinho.push({ id: produto.id, nome: produto.nome, preco: produto.preco, qtd: 1 });
+
+    const estoque = Number(produto.quantidade_img);
+    const estoqueValido = Number.isFinite(estoque) ? estoque : null;
+    if (estoqueValido !== null && estoqueValido <= 0) {
+        mostrarNotificacao("Produto sem estoque.", "aviso");
+        return;
     }
+
+    const carrinho = getCarrinho();
+    const item = carrinho.find((i) => String(i.id) === String(produto.id));
+
+    if (item) {
+        const novaQtd = item.qtd + 1;
+        if (estoqueValido !== null && novaQtd > estoqueValido) {
+            mostrarNotificacao("Quantidade máxima em estoque atingida.", "aviso");
+            return;
+        }
+        item.qtd = novaQtd;
+    } else {
+        carrinho.push({
+            id: Number(produto.id),
+            nome: produto.nome,
+            preco: Number(produto.preco),
+            qtd: 1,
+            estoque: estoqueValido,
+        });
+    }
+
     salvarCarrinho(carrinho);
 }
 
 function alterarQtd(id, delta) {
     let carrinho = getCarrinho();
-    const item = carrinho.find((i) => i.id === id);
+    const item = carrinho.find((i) => String(i.id) === String(id));
     if (!item) return;
-    item.qtd += delta;
+
+    const novaQtd = item.qtd + delta;
+    if (
+        delta > 0 &&
+        item.estoque !== null &&
+        Number.isFinite(item.estoque) &&
+        novaQtd > item.estoque
+    ) {
+        mostrarNotificacao("Quantidade máxima em estoque atingida.", "aviso");
+        return;
+    }
+
+    item.qtd = novaQtd;
     if (item.qtd <= 0) {
-        carrinho = carrinho.filter((i) => i.id !== id);
+        carrinho = carrinho.filter((i) => String(i.id) !== String(id));
     }
     salvarCarrinho(carrinho);
     renderCarrinho();
 }
 
 function removerDoCarrinho(id) {
-    const carrinho = getCarrinho().filter((i) => i.id !== id);
+    const carrinho = getCarrinho().filter((i) => String(i.id) !== String(id));
     salvarCarrinho(carrinho);
     renderCarrinho();
 }
@@ -490,18 +647,23 @@ function renderCarrinho() {
     const vazioEl = document.getElementById("carrinhoVazio");
     const totalEl = document.getElementById("carrinhoTotal");
     const btnFinalizar = document.getElementById("btnFinalizar");
+    const pagamentoEl = document.getElementById("carrinhoPagamento");
+    const erroEl = document.getElementById("carrinhoErro");
 
     lista.innerHTML = "";
+    erroEl.textContent = "";
 
     if (carrinho.length === 0) {
         vazioEl.hidden = false;
         totalEl.textContent = "";
         btnFinalizar.hidden = true;
+        pagamentoEl.hidden = true;
         return;
     }
 
     vazioEl.hidden = true;
     btnFinalizar.hidden = false;
+    pagamentoEl.hidden = false;
 
     let total = 0;
     carrinho.forEach((item) => {
@@ -510,19 +672,19 @@ function renderCarrinho() {
         const linha = document.createElement("div");
         linha.className = "item-carrinho";
         linha.innerHTML = `
-            <span class="item-nome">${item.nome}</span>
+            <span class="item-nome">${escaparHtml(item.nome)}</span>
             <div class="item-qtd">
-                <button data-menos="${item.id}">−</button>
+                <button data-menos="${escaparHtml(item.id)}">−</button>
                 <span>${item.qtd}</span>
-                <button data-mais="${item.id}">+</button>
+                <button data-mais="${escaparHtml(item.id)}">+</button>
             </div>
-            <span class="item-subtotal">R$ ${subtotal.toFixed(2).replace(".", ",")}</span>
-            <button class="item-remover" data-remover="${item.id}">Remover</button>
+            <span class="item-subtotal">${formatarPreco(subtotal)}</span>
+            <button class="item-remover" data-remover="${escaparHtml(item.id)}">Remover</button>
         `;
         lista.appendChild(linha);
     });
 
-    totalEl.textContent = `Total: R$ ${total.toFixed(2).replace(".", ",")}`;
+    totalEl.textContent = `Total: ${formatarPreco(total)}`;
 
     lista.querySelectorAll("[data-mais]").forEach((b) =>
         b.addEventListener("click", () => alterarQtd(Number(b.dataset.mais), 1))
@@ -535,16 +697,81 @@ function renderCarrinho() {
     );
 }
 
-document.getElementById("btnFinalizar").addEventListener("click", () => {
+document.getElementById("btnFinalizar").addEventListener("click", async () => {
     const usuario = getUsuarioLogado();
+    const erroEl = document.getElementById("carrinhoErro");
+    erroEl.textContent = "";
+
     if (!usuario) {
-        alert("Faça login para finalizar a compra.");
+        mostrarNotificacao("Faça login para finalizar a compra.", "info");
         mostrarSecao("login");
         return;
     }
-    alert("Compra finalizada com sucesso! (integrar com endpoint de pedidos quando existir)");
-    salvarCarrinho([]);
-    renderCarrinho();
+
+    const carrinho = getCarrinho();
+    if (carrinho.length === 0) return;
+
+    const formaPagamento = document.getElementById("formaPagamento").value;
+    if (!formaPagamento) {
+        erroEl.textContent = "Selecione uma forma de pagamento.";
+        return;
+    }
+
+    const btn = document.getElementById("btnFinalizar");
+    btn.disabled = true;
+    btn.textContent = "Finalizando...";
+
+    try {
+        const resposta = await fetch(`${API_BASE}/compra`, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${usuario.token}`,
+            },
+            body: JSON.stringify({
+                forma_pagamento: formaPagamento,
+                produtos: carrinho.map((item) => ({
+                    id: Number(item.id),
+                    quantidade: item.qtd,
+                })),
+            }),
+        });
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            if (resposta.status === 401 || resposta.status === 403) {
+                localStorage.removeItem("usuarioLogado");
+                atualizarNavbarUsuario();
+                erroEl.textContent = "Sessão expirada. Faça login novamente.";
+                mostrarNotificacao(
+                    "Sua sessão expirou. Faça login novamente para finalizar a compra.",
+                    "erro",
+                    6000
+                );
+                mostrarSecao("login");
+                return;
+            }
+
+            erroEl.textContent =
+                dados.erro || dados.msg || "Não foi possível finalizar a compra.";
+            return;
+        }
+
+        mostrarNotificacao(
+            `Compra realizada com sucesso!\nTotal: ${formatarPreco(dados.valor_total)}`,
+            "sucesso",
+            6000
+        );
+        salvarCarrinho([]);
+        document.getElementById("formaPagamento").value = "";
+        renderCarrinho();
+        mostrarSecao("produtos");
+    } catch (error) {
+        erroEl.textContent = "Erro ao conectar com o servidor: " + error.message;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Finalizar Compra";
+    }
 });
 
 // ===================== INICIALIZAÇÃO =====================
