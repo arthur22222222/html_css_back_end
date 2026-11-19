@@ -35,6 +35,16 @@ LOGIN PRINCIPAL
 E-mail: tui1020kg1@gmail.com
 Senha:  22102009
 
+PERFIL DO CLIENTE
+-----------------
+Depois de entrar, clique no seu nome no topo do site (ao lado da
+setinha) e escolha "Perfil" para:
+- ver seus dados cadastrados;
+- alterar nome, e-mail, CPF e celular;
+- trocar a senha (informando a senha atual).
+No mesmo menu voce tambem pode clicar em "Sair".
+As alteracoes sao salvas no banco de dados.
+
 OUTROS USUARIOS DE TESTE
 ------------------------
 beatriz.lima@email.com

@@ -85,13 +85,122 @@ app.post("/login", async (req,res) => {
 app.get("/cliente/perfil", autenticar, async (req, res)=>{
     try {
         const id = req.usuario.id
-        const resultado = await db.pool.query("SELECT * FROM cliente WHERE id = ?", [id]);
+        const resultado = await db.pool.query(
+            "SELECT id, nome, cpf, celular, email FROM cliente WHERE id = ?",
+            [id]
+        )
         const perfil = resultado[0][0]
-        delete perfil.senha
+        if (!perfil) {
+            return res.status(404).json({ erro: "Cliente não encontrado." })
+        }
         res.status(200).json(perfil)
     } catch (error) {
         res.status(500).json({ erro: 'Erro interno' });
-        throw error;
+    }
+})
+
+app.put("/cliente/perfil", autenticar, async (req, res) => {
+    const id = req.usuario.id
+    const { nome, cpf, celular, email, senha_atual, nova_senha } = req.body || {}
+
+    const nomeLimpo = String(nome ?? "").trim()
+    const emailLimpo = String(email ?? "").trim()
+    const cpfDigitos = somenteDigitos(cpf)
+    const celularDigitos = somenteDigitos(celular)
+
+    if (nomeLimpo.length < 2 || nomeLimpo.length > 100) {
+        return res.status(400).json({ erro: "Informe um nome entre 2 e 100 caracteres." })
+    }
+    if (cpfDigitos.length !== 11 || /^(\d)\1{10}$/.test(cpfDigitos)) {
+        return res.status(400).json({ erro: "Informe um CPF válido com 11 dígitos." })
+    }
+    if (celularDigitos.length < 10 || celularDigitos.length > 11) {
+        return res.status(400).json({ erro: "Informe um celular com DDD e 10 ou 11 dígitos." })
+    }
+    if (emailLimpo.length > 100 || !emailValido(emailLimpo)) {
+        return res.status(400).json({ erro: "Informe um e-mail válido." })
+    }
+
+    try {
+        const resultado = await db.pool.query(
+            "SELECT id, senha FROM cliente WHERE id = ?",
+            [id]
+        )
+        const atual = resultado[0][0]
+        if (!atual) {
+            return res.status(404).json({ erro: "Cliente não encontrado." })
+        }
+
+        const querTrocarSenha = Boolean(senha_atual || nova_senha)
+        let senhaFinal = atual.senha
+
+        if (querTrocarSenha) {
+            if (!senha_atual || !nova_senha) {
+                return res.status(400).json({ erro: "Informe a senha atual e a nova senha." })
+            }
+
+            const senhaConfere = await bcrypt.compare(String(senha_atual), atual.senha)
+            if (!senhaConfere) {
+                return res.status(401).json({ erro: "Senha atual incorreta." })
+            }
+
+            const novaLimpa = String(nova_senha)
+            if (novaLimpa.length < 6 || novaLimpa.length > 72) {
+                return res.status(400).json({ erro: "A nova senha deve ter entre 6 e 72 caracteres." })
+            }
+
+            senhaFinal = await bcrypt.hash(novaLimpa, 10)
+        }
+
+        const cpfFormatado = formatarCpf(cpfDigitos)
+        const celularFormatado = formatarCelular(celularDigitos)
+
+        const emailExistente = await db.pool.query(
+            "SELECT id FROM cliente WHERE email = ? AND id <> ?",
+            [emailLimpo, id]
+        )
+        if (emailExistente[0].length > 0) {
+            return res.status(409).json({ erro: "Este e-mail já está cadastrado em outra conta." })
+        }
+
+        const cpfExistente = await db.pool.query(
+            "SELECT id FROM cliente WHERE cpf = ? AND id <> ?",
+            [cpfFormatado, id]
+        )
+        if (cpfExistente[0].length > 0) {
+            return res.status(409).json({ erro: "Este CPF já está cadastrado em outra conta." })
+        }
+
+        await db.pool.query(
+            `UPDATE cliente
+             SET nome = ?, cpf = ?, celular = ?, email = ?, senha = ?
+             WHERE id = ?`,
+            [nomeLimpo, cpfFormatado, celularFormatado, emailLimpo, senhaFinal, id]
+        )
+
+        const token = jwt.sign(
+            { id: id, email: emailLimpo },
+            process.env.JWT_SECRET,
+            { expiresIn: "2h" }
+        )
+
+        return res.status(200).json({
+            msg: "Dados atualizados com sucesso!",
+            cliente: {
+                id: id,
+                nome: nomeLimpo,
+                cpf: cpfFormatado,
+                celular: celularFormatado,
+                email: emailLimpo,
+            },
+            token: token,
+        })
+    } catch (error) {
+        if (error.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({ erro: "E-mail ou CPF já cadastrado." })
+        }
+        console.error("Erro ao atualizar perfil:", error)
+        return res.status(500).json({ erro: "Erro interno ao atualizar o perfil." })
     }
 })
 
@@ -222,6 +331,27 @@ app.post("/compra", autenticar, async (req,res) => {
 app.listen(port, () => {
     console.log("API rodando na porta " + port)
 })
+
+function somenteDigitos(valor) {
+    return String(valor ?? "").replace(/\D/g, "")
+}
+
+function formatarCpf(digitos) {
+    const d = String(digitos)
+    if (d.length !== 11) return d
+    return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+}
+
+function formatarCelular(digitos) {
+    const d = String(digitos)
+    if (d.length === 11) return `(${d.slice(0, 2)})${d.slice(2, 7)}-${d.slice(7)}`
+    if (d.length === 10) return `(${d.slice(0, 2)})${d.slice(2, 6)}-${d.slice(6)}`
+    return d
+}
+
+function emailValido(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
 
 // https://dontpad.com/backendapi
 function autenticar(req, res, next){

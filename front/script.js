@@ -100,6 +100,12 @@ const estadoProdutos = {
 
 // ===================== NAVEGAÇÃO =====================
 function mostrarSecao(nome) {
+    // O perfil é uma área privada: sem login, abre a tela de login.
+    if (nome === "perfil" && !getUsuarioLogado()) {
+        mostrarNotificacao("Faça login para acessar seu perfil.", "info");
+        nome = "login";
+    }
+
     document.querySelectorAll(".secao").forEach((s) => (s.hidden = true));
     document.getElementById(`secao-${nome}`).hidden = false;
 
@@ -109,6 +115,7 @@ function mostrarSecao(nome) {
 
     if (nome === "produtos") carregarProdutos(estadoProdutos.pagina);
     if (nome === "carrinho") renderCarrinho();
+    if (nome === "perfil") carregarPerfil();
 }
 
 document.querySelectorAll("[data-secao]").forEach((el) => {
@@ -130,10 +137,50 @@ function getUsuarioLogado() {
     }
 }
 
+// ===================== MENU DO USUÁRIO =====================
+const btnMenuUsuario = document.getElementById("btnMenuUsuario");
+const menuUsuarioLista = document.getElementById("menuUsuarioLista");
+
+function fecharMenuUsuario() {
+    menuUsuarioLista.hidden = true;
+    btnMenuUsuario.setAttribute("aria-expanded", "false");
+}
+
+function alternarMenuUsuario() {
+    const abrir = menuUsuarioLista.hidden;
+    menuUsuarioLista.hidden = !abrir;
+    btnMenuUsuario.setAttribute("aria-expanded", String(abrir));
+}
+
+btnMenuUsuario.addEventListener("click", (e) => {
+    e.stopPropagation();
+    alternarMenuUsuario();
+});
+
+// Fecha ao clicar fora do menu.
+document.addEventListener("click", (e) => {
+    if (menuUsuarioLista.hidden) return;
+    if (e.target.closest("#menuUsuario")) return;
+    fecharMenuUsuario();
+});
+
+// Fecha com Esc e devolve o foco para o botão.
+document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || menuUsuarioLista.hidden) return;
+    fecharMenuUsuario();
+    btnMenuUsuario.focus();
+});
+
+document.getElementById("btnPerfilMenu").addEventListener("click", () => {
+    fecharMenuUsuario();
+});
+
 function atualizarNavbarUsuario() {
     const usuario = getUsuarioLogado();
     const navbarUser = document.getElementById("navbarUser");
     const btnLoginNav = document.getElementById("btnLoginNav");
+
+    fecharMenuUsuario();
 
     if (usuario) {
         navbarUser.style.display = "flex";
@@ -146,9 +193,12 @@ function atualizarNavbarUsuario() {
 }
 
 document.getElementById("btnLogout").addEventListener("click", () => {
+    fecharMenuUsuario();
     localStorage.removeItem("usuarioLogado");
     atualizarNavbarUsuario();
+    limparPerfil();
     mostrarSecao("produtos");
+    mostrarNotificacao("Você saiu da sua conta.", "info");
 });
 
 document.getElementById("formLogin").addEventListener("submit", async (e) => {
@@ -225,6 +275,247 @@ document.getElementById("formCadastro").addEventListener("submit", async (e) => 
     } catch (error) {
         erroEl.textContent = "Erro ao conectar com o servidor: " + error.message;
     }
+});
+
+// ===================== PERFIL =====================
+let carregandoPerfil = false;
+
+function somenteDigitos(valor) {
+    return String(valor ?? "").replace(/\D/g, "");
+}
+
+function mascaraCpf(valor) {
+    const digitos = somenteDigitos(valor).slice(0, 11);
+    if (!digitos) return "";
+    if (digitos.length <= 3) return digitos;
+    if (digitos.length <= 6) return `${digitos.slice(0, 3)}.${digitos.slice(3)}`;
+    if (digitos.length <= 9) {
+        return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`;
+    }
+    return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+}
+
+function mascaraCelular(valor) {
+    const digitos = somenteDigitos(valor).slice(0, 11);
+    if (!digitos) return "";
+    if (digitos.length <= 2) return `(${digitos}`;
+
+    const ddd = digitos.slice(0, 2);
+    const numero = digitos.slice(2);
+
+    if (numero.length <= 5) return `(${ddd})${numero}`;
+    // Fixo: (43)9966-4654 | Celular: (43)99966-4654
+    if (numero.length === 8) return `(${ddd})${numero.slice(0, 4)}-${numero.slice(4)}`;
+    return `(${ddd})${numero.slice(0, 5)}-${numero.slice(5)}`;
+}
+
+function limparPerfil() {
+    const form = document.getElementById("formPerfil");
+    if (form) form.reset();
+
+    const erroEl = document.getElementById("perfilErro");
+    if (erroEl) erroEl.textContent = "";
+
+    document.getElementById("perfilNomeExibicao").textContent = "Seu perfil";
+    document.getElementById("perfilEmailExibicao").textContent = "";
+    document.getElementById("perfilAvatar").textContent = "?";
+}
+
+function preencherPerfil(perfil) {
+    document.getElementById("perfilNome").value = perfil.nome || "";
+    document.getElementById("perfilEmail").value = perfil.email || "";
+    document.getElementById("perfilCpf").value = mascaraCpf(perfil.cpf || "");
+    document.getElementById("perfilCelular").value = mascaraCelular(perfil.celular || "");
+    document.getElementById("perfilSenhaAtual").value = "";
+    document.getElementById("perfilNovaSenha").value = "";
+    document.getElementById("perfilConfirmarSenha").value = "";
+    document.getElementById("perfilErro").textContent = "";
+
+    const nome = String(perfil.nome || "").trim();
+    document.getElementById("perfilNomeExibicao").textContent = nome || "Seu perfil";
+    document.getElementById("perfilEmailExibicao").textContent = perfil.email || "";
+    document.getElementById("perfilAvatar").textContent = (nome.charAt(0) || "?").toUpperCase();
+}
+
+function validarPerfil(dados) {
+    if (dados.nome.length < 2 || dados.nome.length > 100) {
+        return "Informe um nome entre 2 e 100 caracteres.";
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email) || dados.email.length > 100) {
+        return "Informe um e-mail válido.";
+    }
+    if (dados.cpf.length !== 11 || /^(\d)\1{10}$/.test(dados.cpf)) {
+        return "Informe um CPF válido com 11 dígitos.";
+    }
+    if (dados.celular.length < 10 || dados.celular.length > 11) {
+        return "Informe um celular com DDD e 10 ou 11 dígitos.";
+    }
+
+    const querTrocarSenha = Boolean(dados.senhaAtual || dados.novaSenha || dados.confirmarSenha);
+    if (querTrocarSenha) {
+        if (!dados.senhaAtual) return "Informe sua senha atual para trocar a senha.";
+        if (!dados.novaSenha) return "Informe a nova senha.";
+        if (dados.novaSenha.length < 6 || dados.novaSenha.length > 72) {
+            return "A nova senha deve ter entre 6 e 72 caracteres.";
+        }
+        if (dados.novaSenha !== dados.confirmarSenha) {
+            return "As senhas novas não coincidem.";
+        }
+    }
+
+    return "";
+}
+
+function encerrarSessao(mensagem) {
+    localStorage.removeItem("usuarioLogado");
+    atualizarNavbarUsuario();
+    limparPerfil();
+    mostrarSecao("login");
+    if (mensagem) mostrarNotificacao(mensagem, "aviso", 6000);
+}
+
+async function carregarPerfil() {
+    const usuario = getUsuarioLogado();
+    const erroEl = document.getElementById("perfilErro");
+
+    if (!usuario) {
+        mostrarNotificacao("Faça login para acessar seu perfil.", "info");
+        return false;
+    }
+    if (carregandoPerfil) return false;
+
+    carregandoPerfil = true;
+    erroEl.textContent = "";
+
+    const btn = document.getElementById("btnSalvarPerfil");
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Carregando...";
+
+    try {
+        const resposta = await fetch(`${API_BASE}/cliente/perfil`, {
+            headers: { authorization: `Bearer ${usuario.token}` },
+        });
+        const dados = await resposta.json().catch(() => ({}));
+
+        if (!resposta.ok) {
+            if (resposta.status === 401 || resposta.status === 403) {
+                encerrarSessao("Sua sessão expirou. Faça login novamente.");
+                return false;
+            }
+            erroEl.textContent = dados.erro || dados.msg || "Não foi possível carregar seu perfil.";
+            return false;
+        }
+
+        preencherPerfil(dados);
+        return true;
+    } catch (error) {
+        erroEl.textContent = "Erro ao conectar com o servidor: " + error.message;
+        return false;
+    } finally {
+        carregandoPerfil = false;
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+    }
+}
+
+document.getElementById("formPerfil").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const erroEl = document.getElementById("perfilErro");
+    erroEl.textContent = "";
+
+    const usuario = getUsuarioLogado();
+    if (!usuario) {
+        mostrarNotificacao("Faça login para acessar seu perfil.", "info");
+        mostrarSecao("login");
+        return;
+    }
+
+    const dados = {
+        nome: document.getElementById("perfilNome").value.trim(),
+        email: document.getElementById("perfilEmail").value.trim(),
+        cpf: somenteDigitos(document.getElementById("perfilCpf").value),
+        celular: somenteDigitos(document.getElementById("perfilCelular").value),
+        senhaAtual: document.getElementById("perfilSenhaAtual").value,
+        novaSenha: document.getElementById("perfilNovaSenha").value,
+        confirmarSenha: document.getElementById("perfilConfirmarSenha").value,
+    };
+
+    const erroValidacao = validarPerfil(dados);
+    if (erroValidacao) {
+        erroEl.textContent = erroValidacao;
+        mostrarNotificacao(erroValidacao, "aviso");
+        return;
+    }
+
+    const btn = document.getElementById("btnSalvarPerfil");
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    try {
+        const resposta = await fetch(`${API_BASE}/cliente/perfil`, {
+            method: "PUT",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${usuario.token}`,
+            },
+            body: JSON.stringify({
+                nome: dados.nome,
+                cpf: dados.cpf,
+                celular: dados.celular,
+                email: dados.email,
+                senha_atual: dados.senhaAtual,
+                nova_senha: dados.novaSenha,
+            }),
+        });
+        const corpo = await resposta.json().catch(() => ({}));
+        const mensagem = corpo.erro || corpo.msg || "Não foi possível salvar seu perfil.";
+
+        if (!resposta.ok) {
+            // 401 também é usado quando a senha atual está errada; nesse caso
+            // não encerramos a sessão, apenas mostramos o aviso.
+            const senhaIncorreta = resposta.status === 401 && /senha atual/i.test(mensagem);
+
+            if ((resposta.status === 401 || resposta.status === 403) && !senhaIncorreta) {
+                encerrarSessao("Sua sessão expirou. Faça login novamente.");
+                return;
+            }
+
+            erroEl.textContent = mensagem;
+            mostrarNotificacao(mensagem, resposta.status === 409 ? "aviso" : "erro");
+            return;
+        }
+
+        const cliente = corpo.cliente || {};
+        localStorage.setItem("usuarioLogado", JSON.stringify({
+            nome: cliente.nome || dados.nome,
+            token: corpo.token || usuario.token,
+        }));
+
+        atualizarNavbarUsuario();
+        preencherPerfil(cliente);
+        mostrarNotificacao(corpo.msg || "Dados atualizados com sucesso!", "sucesso");
+    } catch (error) {
+        erroEl.textContent = "Erro ao conectar com o servidor: " + error.message;
+        mostrarNotificacao("Erro ao conectar com o servidor.", "erro");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+    }
+});
+
+document.getElementById("btnCancelarPerfil").addEventListener("click", async () => {
+    const recarregou = await carregarPerfil();
+    if (recarregou) mostrarNotificacao("Alterações descartadas.", "info");
+});
+
+document.getElementById("perfilCpf").addEventListener("input", (e) => {
+    e.target.value = mascaraCpf(e.target.value);
+});
+
+document.getElementById("perfilCelular").addEventListener("input", (e) => {
+    e.target.value = mascaraCelular(e.target.value);
 });
 
 // ===================== PRODUTOS =====================

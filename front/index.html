@@ -20,8 +20,41 @@
             <button class="nav-btn" data-secao="cadastro">Cadastro</button>
         </div>
         <div class="navbar-user" id="navbarUser" style="display:none;">
-            <span id="usuarioNome"></span>
-            <button id="btnLogout" class="nav-btn logout">Sair</button>
+            <div class="menu-usuario" id="menuUsuario">
+                <button type="button" class="menu-usuario-btn" id="btnMenuUsuario"
+                        aria-haspopup="true" aria-expanded="false" aria-controls="menuUsuarioLista">
+                    <span id="usuarioNome"></span>
+                    <svg class="menu-usuario-seta" width="12" height="12" viewBox="0 0 24 24"
+                         fill="none" aria-hidden="true">
+                        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.4"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="menu-usuario-lista" id="menuUsuarioLista" hidden>
+                    <button type="button" class="menu-usuario-item" id="btnPerfilMenu" data-secao="perfil">
+                        <svg class="menu-usuario-icone" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                                  stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Perfil
+                    </button>
+                    <button type="button" class="menu-usuario-item sair" id="btnLogout">
+                        <svg class="menu-usuario-icone" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                                  stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Sair
+                    </button>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -129,6 +162,67 @@
                 <input type="password" id="senha" required>
                 <span id="cadastroErro" class="error-message"></span>
                 <button type="submit" class="submit-btn">Criar Conta</button>
+            </form>
+        </section>
+
+        <!-- PERFIL -->
+        <section id="secao-perfil" class="secao" hidden>
+            <h1>Meu Perfil</h1>
+
+            <div class="perfil-cabecalho">
+                <div class="perfil-avatar" id="perfilAvatar" aria-hidden="true">A</div>
+                <div class="perfil-identificacao">
+                    <p class="perfil-nome" id="perfilNomeExibicao">Seu perfil</p>
+                    <p class="perfil-email" id="perfilEmailExibicao"></p>
+                </div>
+            </div>
+
+            <form id="formPerfil" novalidate>
+                <div class="perfil-grid">
+                    <div>
+                        <label for="perfilNome">Nome completo</label>
+                        <input type="text" id="perfilNome" maxlength="100" autocomplete="name" required>
+                    </div>
+                    <div>
+                        <label for="perfilEmail">E-mail</label>
+                        <input type="email" id="perfilEmail" maxlength="100" autocomplete="email" required>
+                    </div>
+                    <div>
+                        <label for="perfilCpf">CPF</label>
+                        <input type="text" id="perfilCpf" maxlength="14" inputmode="numeric" autocomplete="off" required>
+                    </div>
+                    <div>
+                        <label for="perfilCelular">Celular</label>
+                        <input type="tel" id="perfilCelular" maxlength="14" inputmode="tel" autocomplete="tel" required>
+                    </div>
+                </div>
+
+                <div class="perfil-divisor"></div>
+
+                <h2 class="perfil-subtitulo">Alterar senha</h2>
+                <p class="perfil-dica">Preencha os campos abaixo apenas se quiser trocar sua senha.</p>
+
+                <div class="perfil-grid">
+                    <div>
+                        <label for="perfilSenhaAtual">Senha atual</label>
+                        <input type="password" id="perfilSenhaAtual" autocomplete="current-password">
+                    </div>
+                    <div>
+                        <label for="perfilNovaSenha">Nova senha</label>
+                        <input type="password" id="perfilNovaSenha" minlength="6" autocomplete="new-password">
+                    </div>
+                    <div>
+                        <label for="perfilConfirmarSenha">Confirmar nova senha</label>
+                        <input type="password" id="perfilConfirmarSenha" minlength="6" autocomplete="new-password">
+                    </div>
+                </div>
+
+                <span id="perfilErro" class="error-message" role="alert"></span>
+
+                <div class="perfil-acoes">
+                    <button type="submit" class="submit-btn" id="btnSalvarPerfil">Salvar alterações</button>
+                    <button type="button" class="btn-limpar" id="btnCancelarPerfil">Descartar alterações</button>
+                </div>
             </form>
         </section>
     </main>
